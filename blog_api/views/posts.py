@@ -3,7 +3,7 @@ from blog_api.helpers import (error_response, success_response,
                               HTTP_400_BAD_REQUEST, HTTP_201_CREATED,
                               HTTP_200_OK, HTTP_404_NOT_FOUND,
                               contains_only_letters_and_numbers)
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request
 from sqlalchemy.exc import IntegrityError
 
 
