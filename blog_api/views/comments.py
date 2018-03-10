@@ -1,7 +1,8 @@
 from blog_api.models import db, Comment, Post, User
 from blog_api.helpers import (error_response, success_response,
                               HTTP_400_BAD_REQUEST, HTTP_201_CREATED,
-                              HTTP_200_OK, HTTP_404_NOT_FOUND)
+                              HTTP_200_OK, HTTP_404_NOT_FOUND,
+                              HTTP_403_FORBIDDEN)
 from flask import Blueprint, request
 from sqlalchemy.exc import IntegrityError
 
@@ -19,7 +20,14 @@ def parse_validate_comment_raw(raw):
     # todo escape html tags
     if len(body) > 10000:
         return None, 'Field `body` is too long. Max length is 10000'
-    comment_cleaned = {'body': body}
+    user_id = raw.get('user_id')
+    if not user_id:
+        return None, 'Field `user_id` is required'
+    try:
+        user_id = int(user_id)
+    except ValueError:
+        return None, 'Bad field `user_id`'
+    comment_cleaned = {'body': body, 'user_id': user_id}
     return comment_cleaned, None
 
 
@@ -36,7 +44,7 @@ def get_comments_or_create(user_id, post_id):
     if request.method == 'GET':
         return get_comments(post_id)
     else:
-        return create_comment(user_id, post_id)
+        return create_comment(post_id)
 
 
 def get_comments(post_id):
@@ -57,12 +65,21 @@ def get_comments(post_id):
     return success_response(HTTP_200_OK, comments)
 
 
-def create_comment(user_id, post_id):
+def create_comment(post_id):
     comment_raw = request.get_json(force=True)
     comment_cleaned, error = parse_validate_comment_raw(comment_raw)
     if error:
         return error_response(HTTP_400_BAD_REQUEST, error)
-    comment = Comment(body=comment_cleaned['body'], user_id=user_id, post_id=post_id)
+
+    for_user_id = comment_cleaned['user_id']
+    post = Post.query.get(post_id)
+    if not post:
+        return error_response(HTTP_404_NOT_FOUND, 'Post does not exist')
+    for ban in post.banned_users:
+        if ban.user_id == for_user_id:
+            return error_response(HTTP_403_FORBIDDEN, 'This user is not allowed to create comments')
+
+    comment = Comment(body=comment_cleaned['body'], user_id=for_user_id, post_id=post_id)
     db.session.add(comment)
     try:
         db.session.commit()

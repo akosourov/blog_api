@@ -5,6 +5,7 @@ import re
 HTTP_200_OK = 200
 HTTP_201_CREATED = 201
 HTTP_400_BAD_REQUEST = 400
+HTTP_403_FORBIDDEN = 403
 HTTP_404_NOT_FOUND = 404
 
 only_letters_and_numbers_pattern = re.compile(r'^[A-Za-z0-9]*$')

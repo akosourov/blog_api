@@ -29,6 +29,7 @@ class Post(db.Model):
     user_id = db.Column(db.ForeignKey('user.id'), nullable=False)
     tags = db.relationship('Tag', secondary=tag_post_table,
                            backref=db.backref('posts'))
+    banned_users = db.relationship('BanForComment')
 
     def __repr__(self):
         return '<Post: %s>' % self.title
@@ -52,3 +53,10 @@ class Tag(db.Model):
 
     def __repr__(self):
         return '<Tag :%s>' % self.name[:10]
+
+
+# таблица для запрета пользователю возможности комментирования поста
+class BanForComment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.ForeignKey('post.id'), nullable=False)
